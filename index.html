@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion Restaurant</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+   
+</head>
+<body>
+    <div class="container">
+        <h1>Gestion Restaurant</h1>
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('nouvelle-facture')">Nouvelle Facture</button>
+            <button class="tab" onclick="showTab('articles')">Gestion Articles</button>
+            <button class="tab" onclick="showTab('historique')">Historique</button>
+        </div>
+
+        <!-- Onglet Nouvelle Facture -->
+        <div id="nouvelle-facture" class="tab-content active">
+            <div class="grid">
+                <div>
+                    <h2>Articles Disponibles</h2>
+                    <div class="form-group">
+                        <label>Numéro de table</label>
+                        <input type="number" id="table-number" min="1">
+                    </div>
+                    <table id="articles-table">
+                        <thead>
+                            <tr>
+                                <th>Article</th>
+                                <th>Prix</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div>
+                    <h2>Facture en cours</h2>
+                    <div id="current-cart"></div>
+                    <div class="total">Total: <span id="cart-total">0.00</span> €</div>
+                    <button class="btn" onclick="finaliserFacture()">Finaliser la facture</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Onglet Gestion Articles -->
+        <div id="articles" class="tab-content">
+            <h2>Ajouter un article</h2>
+            <div class="form-group">
+                <label>Nom</label>
+                <input type="text" id="article-name">
+            </div>
+            <div class="form-group">
+                <label>Prix</label>
+                <input type="number" id="article-price" step="0.01">
+            </div>
+            <div class="form-group">
+                <label>Catégorie</label>
+                <select id="article-category">
+                    <option value="entree">Entrée</option>
+                    <option value="plat">Plat</option>
+                    <option value="dessert">Dessert</option>
+                    <option value="boisson">Boisson</option>
+                </select>
+            </div>
+            <button class="btn" onclick="ajouterArticle()">Ajouter l'article</button>
+        </div>
+
+        <!-- Onglet Historique -->
+       <!-- Modification de la section historique dans index.html -->
+<div id="historique" class="tab-content">
+    <h2>Historique des factures</h2>
+    <table id="historique-table">
+        <thead>
+            <tr>
+                <th>N° Facture</th>
+                <th>Table</th>
+                <th>Date</th>
+                <th>Total</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+   <script src="main.js"></script>
+</body>
+</html>
