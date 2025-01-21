@@ -44,7 +44,7 @@
 
 .grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1, 1fr;
     gap: 20px;
 }
 
@@ -102,4 +102,11 @@ th, td {
     font-weight: bold;
     text-align: right;
     margin-top: 20px;
+}
+
+
+@media (min-width: 768px) {
+    .tabs{
+        flex-direction: column;
+    }
 }
