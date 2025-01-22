@@ -38,30 +38,61 @@ async function afficherArticlesDisponibles() {
 
     articles.forEach(article => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${article.nom}</td>
-            <td>${parseFloat(article.prix).toFixed(2)} €</td>
-            <td>
-                <div class="quantity-controls">
-                    <button onclick="modifierQuantiteInput(${article.id}, -1)" class="btn-quantity">
-                        <i class="fas fa-minus"></i>
-                    </button>
-                    <input type="number" 
-                           min="1" 
-                           value="1" 
-                           class="quantity-input" 
-                           id="quantity-${article.id}"
-                           onchange="validateQuantity(this)">
-                    <button onclick="modifierQuantiteInput(${article.id}, 1)" class="btn-quantity">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                    <button onclick="ajouterAuPanier(${article.id})" class="btn-add">
-                        <i class="fas fa-cart-plus"></i>
-                        Ajouter
-                    </button>
-                </div>
-            </td>
-        `;
+        
+        // Cellule nom
+        const tdNom = document.createElement('td');
+        tdNom.textContent = article.nom;
+        
+        // Cellule prix
+        const tdPrix = document.createElement('td');
+        tdPrix.textContent = `${parseFloat(article.prix).toFixed(2)} €`;
+        
+        // Cellule actions
+        const tdActions = document.createElement('td');
+        const divControls = document.createElement('div');
+        divControls.className = 'quantity-controls';
+        
+        // Bouton moins
+        const btnMinus = document.createElement('button');
+        btnMinus.className = 'btn-quantity';
+        btnMinus.onclick = () => modifierQuantiteInput(article.id, -1);
+        const iconMinus = document.createElement('i');
+        iconMinus.className = 'fas fa-minus';
+        btnMinus.appendChild(iconMinus);
+        
+        // Input quantité
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.min = '1';
+        input.value = '1';
+        input.className = 'quantity-input';
+        input.id = `quantity-${article.id}`;
+        input.onchange = () => validateQuantity(input);
+        
+        // Bouton plus
+        const btnPlus = document.createElement('button');
+        btnPlus.className = 'btn-quantity';
+        btnPlus.onclick = () => modifierQuantiteInput(article.id, 1);
+        const iconPlus = document.createElement('i');
+        iconPlus.className = 'fas fa-plus';
+        btnPlus.appendChild(iconPlus);
+        
+        // Bouton ajouter
+        const btnAdd = document.createElement('button');
+        btnAdd.className = 'btn-add';
+        btnAdd.onclick = () => ajouterAuPanier(article.id);
+        const iconCart = document.createElement('i');
+        iconCart.className = 'fas fa-cart-plus';
+        const spanAdd = document.createElement('span');
+        spanAdd.textContent = 'Ajouter';
+        btnAdd.append(iconCart, ' ', spanAdd);
+        
+        // Assemblage des contrôles
+        divControls.append(btnMinus, input, btnPlus, btnAdd);
+        tdActions.appendChild(divControls);
+        
+        // Assemblage final
+        tr.append(tdNom, tdPrix, tdActions);
         tbody.appendChild(tr);
     });
 }
@@ -130,41 +161,84 @@ function afficherPanier() {
         let total = 0;
 
         if (currentCart.length === 0) {
-            cartDiv.innerHTML = `
-                <div class="cart-empty">
-                    <p>Aucun article dans le panier</p>
-                </div>
-            `;
+            const emptyDiv = document.createElement('div');
+            emptyDiv.className = 'cart-empty';
+            const emptyText = document.createElement('p');
+            emptyText.textContent = 'Aucun article dans le panier';
+            emptyDiv.appendChild(emptyText);
+            cartDiv.appendChild(emptyDiv);
         } else {
             currentCart.forEach((article, index) => {
                 const sousTotal = article.prix * article.quantite;
-                const div = document.createElement('div');
-                div.className = 'cart-item';
-                div.innerHTML = `
-                    <div class="cart-item-details">
-                        <div class="cart-item-name">${article.nom}</div>
-                        <div class="cart-item-price">
-                            <span class="price-unit">${article.prix.toFixed(2)} €/unité</span>
-                            <span class="price-total">Total: ${sousTotal.toFixed(2)} €</span>
-                        </div>
-                    </div>
-                    <div class="cart-item-quantity">
-                        <button onclick="modifierQuantite(${index}, -1)" class="btn btn-quantity">-</button>
-                        <span class="quantity-display">${article.quantite}</span>
-                        <button onclick="modifierQuantite(${index}, 1)" class="btn btn-quantity">+</button>
-                    </div>
-                    <button onclick="retirerDuPanier(${index})" class="btn btn-remove">
-                        <span class="remove-icon">×</span>
-                    </button>
-                `;
-                cartDiv.appendChild(div);
+                
+                // Création de l'élément principal
+                const divItem = document.createElement('div');
+                divItem.className = 'cart-item';
+
+                // Détails de l'article
+                const divDetails = document.createElement('div');
+                divDetails.className = 'cart-item-details';
+
+                const divName = document.createElement('div');
+                divName.className = 'cart-item-name';
+                divName.textContent = article.nom;
+
+                const divPrice = document.createElement('div');
+                divPrice.className = 'cart-item-price';
+
+                const spanUnit = document.createElement('span');
+                spanUnit.className = 'price-unit';
+                spanUnit.textContent = `${article.prix.toFixed(2)} €/unité`;
+
+                const spanTotal = document.createElement('span');
+                spanTotal.className = 'price-total';
+                spanTotal.textContent = `Total: ${sousTotal.toFixed(2)} €`;
+
+                divPrice.append(spanUnit, spanTotal);
+                divDetails.append(divName, divPrice);
+
+                // Contrôles de quantité
+                const divQuantity = document.createElement('div');
+                divQuantity.className = 'cart-item-quantity';
+
+                const btnMinus = document.createElement('button');
+                btnMinus.className = 'btn-quantity';
+                btnMinus.onclick = () => modifierQuantite(index, -1);
+                const iconMinus = document.createElement('i');
+                iconMinus.className = 'fas fa-minus';
+                btnMinus.appendChild(iconMinus);
+
+                const spanQuantity = document.createElement('span');
+                spanQuantity.className = 'quantity-display';
+                spanQuantity.textContent = article.quantite;
+
+                const btnPlus = document.createElement('button');
+                btnPlus.className = 'btn-quantity';
+                btnPlus.onclick = () => modifierQuantite(index, 1);
+                const iconPlus = document.createElement('i');
+                iconPlus.className = 'fas fa-plus';
+                btnPlus.appendChild(iconPlus);
+
+                divQuantity.append(btnMinus, spanQuantity, btnPlus);
+
+                // Bouton supprimer
+                const btnRemove = document.createElement('button');
+                btnRemove.className = 'btn-remove';
+                btnRemove.onclick = () => retirerDuPanier(index);
+                const spanRemove = document.createElement('span');
+                spanRemove.className = 'remove-icon';
+                spanRemove.textContent = '×';
+                btnRemove.appendChild(spanRemove);
+
+                // Assemblage final
+                divItem.append(divDetails, divQuantity, btnRemove);
+                cartDiv.appendChild(divItem);
+                
                 total += sousTotal;
             });
         }
 
         document.getElementById('cart-total').textContent = total.toFixed(2);
-        
-        // À la fin de la fonction, rendre visible avec une transition
         cartDiv.style.opacity = '1';
     }, 50);
 }
