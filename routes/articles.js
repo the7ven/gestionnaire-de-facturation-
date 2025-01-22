@@ -35,4 +35,70 @@ router.post('/', async (req, res) => {
     }
 });
 
+// Modifier un article
+router.put('/:id', async (req, res) => {
+    const { id } = req.params;
+    const { nom, prix, categorie } = req.body;
+    
+    try {
+        // Vérifier si l'article existe
+        const [article] = await db.query('SELECT * FROM articles WHERE id = ?', [id]);
+        
+        if (article.length === 0) {
+            return res.status(404).json({ message: 'Article non trouvé' });
+        }
+
+        // Mettre à jour l'article
+        await db.query(
+            'UPDATE articles SET nom = ?, prix = ?, categorie = ? WHERE id = ?',
+            [nom, prix, categorie, id]
+        );
+
+        // Récupérer l'article mis à jour
+        const [articleMisAJour] = await db.query(
+            'SELECT * FROM articles WHERE id = ?',
+            [id]
+        );
+
+        res.json(articleMisAJour[0]);
+    } catch (err) {
+        console.error('Erreur lors de la modification de l\'article:', err);
+        res.status(400).json({ message: err.message });
+    }
+});
+
+// Supprimer un article
+router.delete('/:id', async (req, res) => {
+    const { id } = req.params;
+    
+    try {
+        // Vérifier si l'article existe
+        const [article] = await db.query('SELECT * FROM articles WHERE id = ?', [id]);
+        
+        if (article.length === 0) {
+            return res.status(404).json({ message: 'Article non trouvé' });
+        }
+
+        // Vérifier si l'article est utilisé dans des factures
+        const [factures] = await db.query(
+            'SELECT * FROM facture_articles WHERE article_id = ?',
+            [id]
+        );
+
+        if (factures.length > 0) {
+            return res.status(400).json({ 
+                message: 'Impossible de supprimer cet article car il est utilisé dans des factures'
+            });
+        }
+
+        // Supprimer l'article
+        await db.query('DELETE FROM articles WHERE id = ?', [id]);
+        
+        res.json({ message: 'Article supprimé avec succès' });
+    } catch (err) {
+        console.error('Erreur lors de la suppression de l\'article:', err);
+        res.status(500).json({ message: err.message });
+    }
+});
+
 module.exports = router; 

@@ -53,25 +53,73 @@
 
         <!-- Onglet Gestion Articles -->
         <div id="articles" class="tab-content">
-            <h2>Ajouter un article</h2>
-            <div class="form-group">
-                <label>Nom</label>
-                <input type="text" id="article-name">
+            <div class="grid">
+                <div>
+                    <h2>Ajouter un article</h2>
+                    <div class="form-group">
+                        <label>Nom</label>
+                        <input type="text" id="article-name">
+                    </div>
+                    <div class="form-group">
+                        <label>Prix</label>
+                        <input type="number" id="article-price" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Catégorie</label>
+                        <select id="article-category">
+                            <option value="entree">Entrée</option>
+                            <option value="plat">Plat</option>
+                            <option value="dessert">Dessert</option>
+                            <option value="boisson">Boisson</option>
+                        </select>
+                    </div>
+                    <button class="btn" onclick="ajouterArticle()">Ajouter l'article</button>
+                </div>
+                <div>
+                    <h2>Liste des articles</h2>
+                    <table id="articles-list">
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Prix</th>
+                                <th>Catégorie</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
-            <div class="form-group">
-                <label>Prix</label>
-                <input type="number" id="article-price" step="0.01">
+        </div>
+
+        <!-- Modal pour modifier un article -->
+        <div id="editArticleModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeEditModal()">&times;</span>
+                <h2>Modifier l'article</h2>
+                <div class="form-group">
+                    <label>Nom</label>
+                    <input type="text" id="edit-article-name">
+                </div>
+                <div class="form-group">
+                    <label>Prix</label>
+                    <input type="number" id="edit-article-price" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Catégorie</label>
+                    <select id="edit-article-category">
+                        <option value="entree">Entrée</option>
+                        <option value="plat">Plat</option>
+                        <option value="dessert">Dessert</option>
+                        <option value="boisson">Boisson</option>
+                    </select>
+                </div>
+                <input type="hidden" id="edit-article-id">
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" onclick="closeEditModal()">Annuler</button>
+                    <button class="btn btn-primary" onclick="sauvegarderArticle()">Sauvegarder</button>
+                </div>
             </div>
-            <div class="form-group">
-                <label>Catégorie</label>
-                <select id="article-category">
-                    <option value="entree">Entrée</option>
-                    <option value="plat">Plat</option>
-                    <option value="dessert">Dessert</option>
-                    <option value="boisson">Boisson</option>
-                </select>
-            </div>
-            <button class="btn" onclick="ajouterArticle()">Ajouter l'article</button>
         </div>
 
         <!-- Onglet Historique -->

@@ -14,6 +14,8 @@ function showTab(tabId) {
         afficherArticlesDisponibles();
     } else if (tabId === 'historique') {
         afficherHistorique();
+    } else if (tabId === 'articles') {
+        afficherListeArticles();
     }
 }
 
@@ -582,6 +584,149 @@ function showErrorToast(message) {
             background: "#ff6b6b"
         }
     }).showToast();
+}
+
+// Fonction pour afficher la liste des articles dans l'onglet gestion
+async function afficherListeArticles() {
+    const tbody = document.querySelector('#articles-list tbody');
+    tbody.innerHTML = '';
+    
+    try {
+        const articles = await chargerArticles();
+        
+        articles.forEach(article => {
+            const tr = document.createElement('tr');
+            
+            // Nom
+            const tdNom = document.createElement('td');
+            tdNom.textContent = article.nom;
+            
+            // Prix
+            const tdPrix = document.createElement('td');
+            tdPrix.textContent = `${parseFloat(article.prix).toFixed(2)} €`;
+            
+            // Catégorie
+            const tdCategorie = document.createElement('td');
+            tdCategorie.textContent = article.categorie.charAt(0).toUpperCase() + article.categorie.slice(1);
+            
+            // Actions
+            const tdActions = document.createElement('td');
+            const divActions = document.createElement('div');
+            divActions.className = 'article-actions';
+            
+            // Bouton modifier
+            const btnEdit = document.createElement('button');
+            btnEdit.className = 'btn btn-edit';
+            btnEdit.onclick = () => ouvrirModalEdition(article);
+            const iconEdit = document.createElement('i');
+            iconEdit.className = 'fas fa-edit';
+            btnEdit.appendChild(iconEdit);
+            
+            // Bouton supprimer
+            const btnDelete = document.createElement('button');
+            btnDelete.className = 'btn btn-delete';
+            btnDelete.onclick = () => confirmerSuppression(article);
+            const iconDelete = document.createElement('i');
+            iconDelete.className = 'fas fa-trash';
+            btnDelete.appendChild(iconDelete);
+            
+            divActions.append(btnEdit, btnDelete);
+            tdActions.appendChild(divActions);
+            
+            tr.append(tdNom, tdPrix, tdCategorie, tdActions);
+            tbody.appendChild(tr);
+        });
+    } catch (error) {
+        console.error('Erreur lors du chargement des articles:', error);
+        showErrorToast('Erreur lors du chargement des articles');
+    }
+}
+
+// Fonction pour ouvrir le modal d'édition
+function ouvrirModalEdition(article) {
+    document.getElementById('edit-article-id').value = article.id;
+    document.getElementById('edit-article-name').value = article.nom;
+    document.getElementById('edit-article-price').value = article.prix;
+    document.getElementById('edit-article-category').value = article.categorie;
+    
+    const modal = document.getElementById('editArticleModal');
+    modal.style.display = 'block';
+}
+
+// Fonction pour fermer le modal d'édition
+function closeEditModal() {
+    const modal = document.getElementById('editArticleModal');
+    modal.style.display = 'none';
+}
+
+// Fonction pour sauvegarder les modifications d'un article
+async function sauvegarderArticle() {
+    const id = document.getElementById('edit-article-id').value;
+    const nom = document.getElementById('edit-article-name').value;
+    const prix = parseFloat(document.getElementById('edit-article-price').value);
+    const categorie = document.getElementById('edit-article-category').value;
+
+    if (!nom || !prix || !categorie) {
+        showErrorToast('Veuillez remplir tous les champs');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/articles/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ nom, prix, categorie })
+        });
+
+        if (!response.ok) {
+            throw new Error('Erreur lors de la modification de l\'article');
+        }
+
+        showSuccessToast('Article modifié avec succès');
+        closeEditModal();
+        afficherListeArticles();
+        afficherArticlesDisponibles();
+    } catch (error) {
+        console.error('Erreur:', error);
+        showErrorToast('Erreur lors de la modification de l\'article');
+    }
+}
+
+// Fonction pour confirmer et supprimer un article
+function confirmerSuppression(article) {
+    if (confirm(`Êtes-vous sûr de vouloir supprimer l'article "${article.nom}" ?`)) {
+        supprimerArticle(article.id);
+    }
+}
+
+// Fonction pour supprimer un article
+async function supprimerArticle(id) {
+    try {
+        const response = await fetch(`/api/articles/${id}`, {
+            method: 'DELETE'
+        });
+
+        if (!response.ok) {
+            throw new Error('Erreur lors de la suppression de l\'article');
+        }
+
+        showSuccessToast('Article supprimé avec succès');
+        afficherListeArticles();
+        afficherArticlesDisponibles();
+    } catch (error) {
+        console.error('Erreur:', error);
+        showErrorToast('Erreur lors de la suppression de l\'article');
+    }
+}
+
+// Fermer le modal quand on clique en dehors
+window.onclick = function(event) {
+    const editModal = document.getElementById('editArticleModal');
+    if (event.target === editModal) {
+        closeEditModal();
+    }
 }
 
 
