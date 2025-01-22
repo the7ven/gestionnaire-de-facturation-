@@ -488,14 +488,23 @@ document.addEventListener('DOMContentLoaded', () => {
     afficherArticlesDisponibles();
 });
 
-// Fonction pour ajouter un article
+// Au début du fichier main.js, après la déclaration des variables
 async function ajouterArticle() {
     const nom = document.getElementById('article-name').value;
     const prix = parseFloat(document.getElementById('article-price').value);
     const categorie = document.getElementById('article-category').value;
 
     if (!nom || !prix || !categorie) {
-        showErrorToast('Veuillez remplir tous les champs');
+        Toastify({
+            text: "Veuillez remplir tous les champs",
+            duration: 3000,
+            close: true,
+            gravity: "top",
+            position: "right",
+            style: {
+                background: "#ff6b6b"
+            }
+        }).showToast();
         return;
     }
 
@@ -513,20 +522,39 @@ async function ajouterArticle() {
         }
 
         const nouvelArticle = await response.json();
+        console.log('Article ajouté:', nouvelArticle);
 
         // Réinitialiser le formulaire
         document.getElementById('article-name').value = '';
         document.getElementById('article-price').value = '';
-        document.getElementById('article-category').value = 'entree';
         
-        // Mettre à jour les listes d'articles
-        await afficherListeArticles();
-        await afficherArticlesDisponibles();
+        // Rafraîchir la liste des articles si on est sur l'onglet nouvelle facture
+        if (document.querySelector('#nouvelle-facture').classList.contains('active')) {
+            afficherArticlesDisponibles();
+        }
 
-        showSuccessToast('Article ajouté avec succès!');
+        Toastify({
+            text: "Article ajouté avec succès!",
+            duration: 3000,
+            close: true,
+            gravity: "top",
+            position: "right",
+            style: {
+                background: "#51cf66"
+            }
+        }).showToast();
     } catch (error) {
         console.error('Erreur:', error);
-        showErrorToast('Erreur lors de l\'ajout de l\'article');
+        Toastify({
+            text: "Erreur lors de l'ajout de l'article",
+            duration: 3000,
+            close: true,
+            gravity: "top",
+            position: "right",
+            style: {
+                background: "#ff6b6b"
+            }
+        }).showToast();
     }
 }
 
@@ -666,59 +694,38 @@ async function sauvegarderArticle() {
     }
 }
 
-// Fonction pour ouvrir le modal de suppression
+// Fonction pour confirmer et supprimer un article
 function confirmerSuppression(article) {
-    const modal = document.getElementById('deleteArticleModal');
-    const confirmationText = document.getElementById('delete-confirmation-text');
-    const deleteArticleId = document.getElementById('delete-article-id');
-    
-    confirmationText.textContent = `Êtes-vous sûr de vouloir supprimer l'article "${article.nom}" ?`;
-    deleteArticleId.value = article.id;
-    modal.style.display = 'block';
+    if (confirm(`Êtes-vous sûr de vouloir supprimer l'article "${article.nom}" ?`)) {
+        supprimerArticle(article.id);
+    }
 }
 
-// Fonction pour fermer le modal de suppression
-function closeDeleteModal() {
-    const modal = document.getElementById('deleteArticleModal');
-    modal.style.display = 'none';
-}
-
-// Fonction pour confirmer et exécuter la suppression
-async function confirmerSuppressionArticle() {
-    const id = document.getElementById('delete-article-id').value;
-    
+// Fonction pour supprimer un article
+async function supprimerArticle(id) {
     try {
         const response = await fetch(`/api/articles/${id}`, {
             method: 'DELETE'
         });
 
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || 'Erreur lors de la suppression de l\'article');
+            throw new Error('Erreur lors de la suppression de l\'article');
         }
 
         showSuccessToast('Article supprimé avec succès');
-        closeDeleteModal();
-        
-        // Mettre à jour les listes d'articles
-        await afficherListeArticles();
-        await afficherArticlesDisponibles();
+        afficherListeArticles();
+        afficherArticlesDisponibles();
     } catch (error) {
         console.error('Erreur:', error);
-        showErrorToast(error.message);
+        showErrorToast('Erreur lors de la suppression de l\'article');
     }
 }
 
-// Modifier la gestion des clics en dehors des modals
+// Fermer le modal quand on clique en dehors
 window.onclick = function(event) {
     const editModal = document.getElementById('editArticleModal');
-    const deleteModal = document.getElementById('deleteArticleModal');
-    
     if (event.target === editModal) {
         closeEditModal();
-    }
-    if (event.target === deleteModal) {
-        closeDeleteModal();
     }
 }
 

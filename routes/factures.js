@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 
-// Obtenir toutes les factures avec les détails des articles
+// Obtenir toutes les factures
 router.get('/', async (req, res) => {
     try {
         const [factures] = await db.query(`
@@ -10,31 +10,53 @@ router.get('/', async (req, res) => {
                 f.id,
                 f.numero_table,
                 f.total,
-                f.date_creation,
-                GROUP_CONCAT(
-                    JSON_OBJECT(
-                        'nom', a.nom,
-                        'quantite', fa.quantite,
-                        'prix_unitaire', fa.prix_unitaire,
-                        'sous_total', (fa.quantite * fa.prix_unitaire)
-                    )
-                ) as articles_details
+                f.date_creation
             FROM factures f
-            LEFT JOIN facture_articles fa ON f.id = fa.facture_id
-            LEFT JOIN articles a ON fa.article_id = a.id
-            GROUP BY f.id
             ORDER BY f.date_creation DESC
         `);
 
-        // Formater les données pour inclure les articles
-        const facturesFormatees = factures.map(facture => ({
-            ...facture,
-            articles_details: facture.articles_details ? JSON.parse(`[${facture.articles_details}]`) : []
-        }));
-
-        res.json(facturesFormatees);
+        res.json(factures);
     } catch (err) {
         console.error('Erreur:', err);
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Obtenir une facture spécifique avec ses détails
+router.get('/:id', async (req, res) => {
+    try {
+        // Récupérer les informations de base de la facture
+        const [facture] = await db.query(`
+            SELECT id, numero_table, total, date_creation
+            FROM factures 
+            WHERE id = ?
+        `, [req.params.id]);
+
+        if (!facture[0]) {
+            return res.status(404).json({ message: 'Facture non trouvée' });
+        }
+
+        // Récupérer les articles de la facture
+        const [articles] = await db.query(`
+            SELECT 
+                a.nom,
+                fa.quantite,
+                fa.prix_unitaire,
+                (fa.quantite * fa.prix_unitaire) as sous_total
+            FROM facture_articles fa
+            JOIN articles a ON fa.article_id = a.id
+            WHERE fa.facture_id = ?
+        `, [req.params.id]);
+
+        // Construire la réponse
+        const factureComplete = {
+            ...facture[0],
+            articles_details: articles
+        };
+
+        res.json(factureComplete);
+    } catch (err) {
+        console.error('Erreur lors de la récupération des détails de la facture:', err);
         res.status(500).json({ message: err.message });
     }
 });
@@ -53,24 +75,13 @@ router.post('/', async (req, res) => {
         const factureId = factureResult.insertId;
 
         for (const article of articles) {
-            const articleData = {
-                facture_id: factureId,
-                article_id: Number(article.article_id),
-                quantite: Number(article.quantite),
-                prix_unitaire: Number(article.prix_unitaire)
-            };
-
-            if (!articleData.prix_unitaire) {
-                throw new Error(`Prix unitaire invalide pour l'article ${articleData.article_id}`);
-            }
-
             await db.query(
                 'INSERT INTO facture_articles (facture_id, article_id, quantite, prix_unitaire) VALUES (?, ?, ?, ?)',
                 [
-                    articleData.facture_id,
-                    articleData.article_id,
-                    articleData.quantite,
-                    articleData.prix_unitaire
+                    factureId,
+                    article.article_id,
+                    article.quantite,
+                    article.prix_unitaire
                 ]
             );
         }
@@ -94,47 +105,6 @@ router.post('/', async (req, res) => {
             message: err.message,
             details: 'Erreur lors de l\'insertion des données'
         });
-    }
-});
-
-// Obtenir une facture spécifique avec ses détails
-router.get('/:id', async (req, res) => {
-    try {
-        const [facture] = await db.query(`
-            SELECT 
-                f.id,
-                f.numero_table,
-                f.total,
-                f.date_creation,
-                JSON_ARRAYAGG(
-                    JSON_OBJECT(
-                        'nom', a.nom,
-                        'quantite', fa.quantite,
-                        'prix_unitaire', fa.prix_unitaire,
-                        'sous_total', (fa.quantite * fa.prix_unitaire)
-                    )
-                ) as articles_details
-            FROM factures f
-            LEFT JOIN facture_articles fa ON f.id = fa.facture_id
-            LEFT JOIN articles a ON fa.article_id = a.id
-            WHERE f.id = ?
-            GROUP BY f.id
-        `, [req.params.id]);
-
-        if (!facture[0]) {
-            return res.status(404).json({ message: 'Facture non trouvée' });
-        }
-
-        // Formater la réponse
-        const factureFormatee = {
-            ...facture[0],
-            articles_details: JSON.parse(facture[0].articles_details)
-        };
-
-        res.json(factureFormatee);
-    } catch (err) {
-        console.error('Erreur:', err);
-        res.status(500).json({ message: err.message });
     }
 });
 
