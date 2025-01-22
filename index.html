@@ -122,6 +122,20 @@
             </div>
         </div>
 
+        <!-- Modal de confirmation de suppression -->
+        <div id="deleteArticleModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeDeleteModal()">&times;</span>
+                <h2>Confirmer la suppression</h2>
+                <p id="delete-confirmation-text"></p>
+                <input type="hidden" id="delete-article-id">
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" onclick="closeDeleteModal()">Annuler</button>
+                    <button class="btn btn-danger" onclick="confirmerSuppressionArticle()">Supprimer</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Onglet Historique -->
        <!-- Modification de la section historique dans index.html -->
 <div id="historique" class="tab-content">
