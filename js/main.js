@@ -729,4 +729,185 @@ window.onclick = function(event) {
     }
 }
 
+// Charger les articles
+function loadArticles() {
+    const articles = ArticleStorage.getAll();
+    displayArticles(articles);
+}
+
+// Afficher les articles
+function displayArticles(articles) {
+    const articlesContainer = document.getElementById('articles-container');
+    articlesContainer.innerHTML = '';
+
+    articles.forEach(article => {
+        const articleElement = document.createElement('div');
+        articleElement.className = 'article-card';
+        articleElement.innerHTML = `
+            <h3>${article.nom}</h3>
+            <p>Prix: ${article.prix}€</p>
+            <p>Catégorie: ${article.categorie}</p>
+            <button onclick="addToFacture(${article.id})">Ajouter à la facture</button>
+        `;
+        articlesContainer.appendChild(articleElement);
+    });
+}
+
+// Ajouter un article
+function addArticle(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    const article = {
+        nom: formData.get('nom'),
+        prix: parseFloat(formData.get('prix')),
+        categorie: formData.get('categorie')
+    };
+
+    ArticleStorage.add(article);
+    loadArticles();
+    event.target.reset();
+}
+
+// Facture courante
+let currentFacture = {
+    numero_table: null,
+    articles: [],
+    total: 0
+};
+
+// Ajouter à la facture
+function addToFacture(articleId) {
+    if (!currentFacture.numero_table) {
+        const tableNumber = prompt('Numéro de table :');
+        if (!tableNumber) return;
+        currentFacture.numero_table = parseInt(tableNumber);
+    }
+
+    const article = ArticleStorage.getById(articleId);
+    if (article) {
+        const existingItem = currentFacture.articles.find(item => item.article_id === articleId);
+        if (existingItem) {
+            existingItem.quantite++;
+        } else {
+            currentFacture.articles.push({
+                article_id: articleId,
+                nom: article.nom,
+                prix_unitaire: article.prix,
+                quantite: 1
+            });
+        }
+        currentFacture.total = calculateTotal();
+        displayCurrentFacture();
+    }
+}
+
+// Calculer le total
+function calculateTotal() {
+    return currentFacture.articles.reduce((total, item) => {
+        return total + (item.prix_unitaire * item.quantite);
+    }, 0);
+}
+
+// Afficher la facture courante
+function displayCurrentFacture() {
+    const factureContainer = document.getElementById('facture-courante');
+    factureContainer.innerHTML = `
+        <h3>Facture - Table ${currentFacture.numero_table}</h3>
+        <ul>
+            ${currentFacture.articles.map(item => `
+                <li>
+                    ${item.nom} x ${item.quantite} = ${(item.prix_unitaire * item.quantite).toFixed(2)}€
+                    <button onclick="removeFromFacture(${item.article_id})">-</button>
+                </li>
+            `).join('')}
+        </ul>
+        <p>Total: ${currentFacture.total.toFixed(2)}€</p>
+        <button onclick="saveFacture()">Enregistrer la facture</button>
+    `;
+}
+
+// Retirer de la facture
+function removeFromFacture(articleId) {
+    const item = currentFacture.articles.find(item => item.article_id === articleId);
+    if (item) {
+        if (item.quantite > 1) {
+            item.quantite--;
+        } else {
+            currentFacture.articles = currentFacture.articles.filter(item => item.article_id !== articleId);
+        }
+        currentFacture.total = calculateTotal();
+        displayCurrentFacture();
+    }
+}
+
+// Sauvegarder la facture
+function saveFacture() {
+    if (currentFacture.articles.length === 0) {
+        alert('La facture est vide !');
+        return;
+    }
+
+    FactureStorage.add({
+        numero_table: currentFacture.numero_table,
+        articles: currentFacture.articles,
+        total: currentFacture.total
+    });
+
+    // Réinitialiser la facture courante
+    currentFacture = {
+        numero_table: null,
+        articles: [],
+        total: 0
+    };
+    
+    document.getElementById('facture-courante').innerHTML = '';
+    loadFactures();
+}
+
+// Charger les factures
+function loadFactures() {
+    const factures = FactureStorage.getAll();
+    displayFactures(factures);
+}
+
+// Afficher les factures
+function displayFactures(factures) {
+    const facturesContainer = document.getElementById('factures-container');
+    facturesContainer.innerHTML = '';
+
+    factures.forEach(facture => {
+        const factureElement = document.createElement('div');
+        factureElement.className = 'facture-card';
+        factureElement.innerHTML = `
+            <h3>Facture #${facture.id} - Table ${facture.numero_table}</h3>
+            <p>Date: ${new Date(facture.date_creation).toLocaleString()}</p>
+            <ul>
+                ${facture.articles.map(item => `
+                    <li>${item.nom} x ${item.quantite} = ${(item.prix_unitaire * item.quantite).toFixed(2)}€</li>
+                `).join('')}
+            </ul>
+            <p>Total: ${facture.total.toFixed(2)}€</p>
+            <button onclick="deleteFacture(${facture.id})">Supprimer</button>
+        `;
+        facturesContainer.appendChild(factureElement);
+    });
+}
+
+// Supprimer une facture
+function deleteFacture(id) {
+    if (confirm('Voulez-vous vraiment supprimer cette facture ?')) {
+        FactureStorage.delete(id);
+        loadFactures();
+    }
+}
+
+// Initialisation
+document.addEventListener('DOMContentLoaded', () => {
+    loadArticles();
+    loadFactures();
+    
+    // Gestionnaire pour le formulaire d'ajout d'article
+    document.getElementById('article-form').addEventListener('submit', addArticle);
+});
+
 
