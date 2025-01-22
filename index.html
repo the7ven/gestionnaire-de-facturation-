@@ -4,9 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion Restaurant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <link rel="stylesheet" href="styles.css">
-   
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 </head>
 <body>
     <div class="container">
@@ -41,7 +45,7 @@
                     <h2>Facture en cours</h2>
                     <div id="current-cart"></div>
                     <div class="total">Total: <span id="cart-total">0.00</span> €</div>
-                    <button class="btn" onclick="finaliserFacture()">Finaliser la facture</button>
+                    <button class="btn btn-complete" onclick="finaliserFacture()">Finaliser la facture</button>
                 </div>
             </div>
         </div>
@@ -88,5 +92,12 @@
 </div>
 
    <script src="main.js"></script>
+
+   <div id="factureModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <div id="modalContent"></div>
+    </div>
+</div>
 </body>
 </html>
