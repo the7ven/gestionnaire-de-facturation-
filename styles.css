@@ -218,32 +218,91 @@ th {
     transition: all 0.2s ease;
 }
 
+.quantity-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.quantity-input {
+    width: 50px;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #2d3748;
+    background-color: white;
+}
+
+.quantity-input:focus {
+    outline: none;
+    border-color: #3182ce;
+    box-shadow: 0 0 0 2px rgba(49, 130, 206, 0.2);
+}
+
+.quantity-input::-webkit-inner-spin-button,
+.quantity-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
 .btn-quantity {
     width: 32px;
     height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: white;
     border: none;
-    border-radius: 6px;
+    background-color: white;
     color: #4a5568;
-    font-size: 18px;
+    border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .btn-quantity:hover {
-    background-color: #3182ce;
-    color: white;
-    transform: scale(1.05);
+    background-color: #edf2f7;
+    color: #2d3748;
+    transform: translateY(-1px);
 }
 
-.quantity-display {
-    min-width: 40px;
-    text-align: center;
-    font-weight: 600;
-    color: #2d3748;
+.btn-quantity:active {
+    transform: translateY(0);
+}
+
+.btn-add {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background-color: #3182ce;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(49, 130, 206, 0.2);
+}
+
+.btn-add:hover {
+    background-color: #2c5282;
+    transform: translateY(-1px);
+}
+
+.btn-add:active {
+    transform: translateY(0);
+}
+
+.btn-add i {
+    font-size: 14px;
 }
 
 .btn-remove {

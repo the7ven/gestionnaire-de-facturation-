@@ -44,25 +44,15 @@ router.post('/', async (req, res) => {
     const { numeroTable, articles, total } = req.body;
     
     try {
-        // Debug: Afficher les données reçues
-        console.log('Données reçues:', req.body);
-        
-        // Début de la transaction
         await db.query('START TRANSACTION');
 
-        // Créer la facture
         const [factureResult] = await db.query(
             'INSERT INTO factures (numero_table, total) VALUES (?, ?)',
             [numeroTable, total]
         );
         const factureId = factureResult.insertId;
 
-        // Debug: Afficher l'ID de la facture créée
-        console.log('Facture créée avec ID:', factureId);
-
-        // Ajouter les articles de la facture
         for (const article of articles) {
-            // Conversion explicite des valeurs
             const articleData = {
                 facture_id: factureId,
                 article_id: Number(article.article_id),
@@ -70,9 +60,6 @@ router.post('/', async (req, res) => {
                 prix_unitaire: Number(article.prix_unitaire)
             };
 
-            console.log('Insertion article avec données:', articleData);
-
-            // Vérification des valeurs avant insertion
             if (!articleData.prix_unitaire) {
                 throw new Error(`Prix unitaire invalide pour l'article ${articleData.article_id}`);
             }
@@ -88,7 +75,6 @@ router.post('/', async (req, res) => {
             );
         }
 
-        // Valider la transaction
         await db.query('COMMIT');
 
         res.status(201).json({ 
@@ -102,7 +88,6 @@ router.post('/', async (req, res) => {
             }
         });
     } catch (err) {
-        // Annuler la transaction en cas d'erreur
         await db.query('ROLLBACK');
         console.error('Erreur serveur détaillée:', err);
         res.status(400).json({ 

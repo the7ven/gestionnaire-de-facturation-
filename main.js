@@ -43,13 +43,43 @@ async function afficherArticlesDisponibles() {
             <td>${parseFloat(article.prix).toFixed(2)} €</td>
             <td>
                 <div class="quantity-controls">
-                    <input type="number" min="1" value="1" class="quantity-input" id="quantity-${article.id}">
-                    <button onclick="ajouterAuPanier(${article.id})" class="btn btn-add">Ajouter</button>
+                    <button onclick="modifierQuantiteInput(${article.id}, -1)" class="btn-quantity">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <input type="number" 
+                           min="1" 
+                           value="1" 
+                           class="quantity-input" 
+                           id="quantity-${article.id}"
+                           onchange="validateQuantity(this)">
+                    <button onclick="modifierQuantiteInput(${article.id}, 1)" class="btn-quantity">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <button onclick="ajouterAuPanier(${article.id})" class="btn-add">
+                        <i class="fas fa-cart-plus"></i>
+                        Ajouter
+                    </button>
                 </div>
             </td>
         `;
         tbody.appendChild(tr);
     });
+}
+
+function validateQuantity(input) {
+    const value = parseInt(input.value);
+    if (isNaN(value) || value < 1) {
+        input.value = 1;
+    }
+}
+
+function modifierQuantiteInput(articleId, delta) {
+    const input = document.getElementById(`quantity-${articleId}`);
+    const currentValue = parseInt(input.value) || 1;
+    const newValue = currentValue + delta;
+    if (newValue >= 1) {
+        input.value = newValue;
+    }
 }
 
 // Modifier la fonction d'ajout au panier
@@ -270,10 +300,6 @@ async function voirDetailsFacture(factureId) {
         const response = await fetch(`/api/factures/${factureId}`);
         const facture = await response.json();
 
-        // Debug pour voir la structure de la réponse
-        console.log('Réponse de l\'API:', facture);
-
-        // Vérification de sécurité pour les articles
         const articles = facture.articles || facture.articles_details || [];
         
         let content = `
