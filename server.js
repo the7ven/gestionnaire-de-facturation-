@@ -2,14 +2,13 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
+const initializeDatabase = require('./db/init');
 
 const app = express();
 
 // Configuration CORS pour la production
 const corsOptions = {
-    origin: process.env.NODE_ENV === 'production' 
-        ? 'https://votre-domaine-frontend.com'
-        : 'http://localhost:5000',
+    origin: '*', // Permet toutes les origines pour le moment
     optionsSuccessStatus: 200
 };
 
@@ -28,12 +27,14 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Au début du fichier, après les requires
-console.log('Variables d\'environnement :', {
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    database: process.env.DB_NAME,
-    port: process.env.PORT
+// Log des variables d'environnement (sans les mots de passe)
+console.log('Configuration de l\'environnement :', {
+    NODE_ENV: process.env.NODE_ENV,
+    PORT: process.env.PORT,
+    DB_HOST: process.env.MYSQLHOST,
+    DB_NAME: process.env.MYSQLDATABASE,
+    DB_USER: process.env.MYSQLUSER,
+    DB_PASSWORD: process.env.MYSQLPASSWORD
 });
 
 // Gestion des erreurs
@@ -43,6 +44,15 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Serveur démarré sur le port ${PORT}`);
+
+// Initialisation de la base de données avant de démarrer le serveur
+initializeDatabase().then(success => {
+    if (success) {
+        app.listen(PORT, () => {
+            console.log(`Serveur démarré sur le port ${PORT}`);
+        });
+    } else {
+        console.error('Impossible de démarrer le serveur : échec de l\'initialisation de la base de données');
+        process.exit(1);
+    }
 }); 

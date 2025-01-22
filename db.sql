@@ -1,6 +1,3 @@
-CREATE DATABASE IF NOT EXISTS gestion_restaurant;
-USE gestion_restaurant;
-
 -- Suppression des tables existantes pour éviter les conflits
 DROP TABLE IF EXISTS facture_articles;
 DROP TABLE IF EXISTS factures;
