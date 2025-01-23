@@ -296,13 +296,13 @@ async function chargerHistorique() {
         
         const tableBody = document.querySelector('#historique-table tbody');
         tableBody.innerHTML = factures.map(facture => `
-            <tr>
+            <tr onclick="afficherDetailFacture(${facture.id})" data-facture-id="${facture.id}">
                 <td>#${facture.id}</td>
                 <td>Table ${facture.numero_table}</td>
                 <td>${moment(facture.date_creation).format('DD/MM/YYYY HH:mm')}</td>
                 <td class="montant">${parseFloat(facture.total).toFixed(2)} €</td>
                 <td class="actions-cell">
-                    <button class="btn btn-view" onclick="afficherDetailFacture(${facture.id})" title="Voir les détails">
+                    <button class="btn btn-view" onclick="event.stopPropagation(); afficherDetailFacture(${facture.id})" title="Voir les détails">
                         <i class="fas fa-receipt"></i>
                         <span>Détails</span>
                     </button>

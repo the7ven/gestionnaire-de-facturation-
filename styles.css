@@ -1222,3 +1222,128 @@ body {
         width: auto;
     }
 }
+
+/* Media Queries pour la réactivité */
+@media screen and (max-width: 1024px) {
+    .grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+
+    .grid {
+        grid-template-columns: 1fr;
+    }
+
+    .tabs {
+        flex-direction: column;
+    }
+
+    .tab {
+        width: 100%;
+        text-align: center;
+    }
+
+    table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .cart-item {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .cart-item-details {
+        text-align: center;
+    }
+
+    .quantity-controls {
+        justify-content: center;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 20px auto;
+    }
+
+    .article-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .btn {
+        width: 100%;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    body {
+        padding: 10px;
+    }
+
+    .quantity-controls {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .quantity-input {
+        width: 60px;
+    }
+
+    th, td {
+        padding: 8px;
+        font-size: 14px;
+    }
+
+    .cart-item-price {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .facture-info {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+#historique-table tr {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+#historique-table tr:hover {
+    background-color: #f7fafc;
+}
+
+@media screen and (max-width: 768px) {
+    #historique-table .actions-cell,
+    #historique-table .btn-view {
+        display: none;
+    }
+
+    #historique-table tr {
+        position: relative;
+    }
+
+    #historique-table tr::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 1px;
+        background-color: #edf2f7;
+    }
+
+    #historique-table tr:active {
+        background-color: #e2e8f0;
+    }
+}
