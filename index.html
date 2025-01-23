@@ -12,7 +12,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <script src="storage.js"></script>
 </head>
 <body>
     <div class="container">
@@ -37,6 +36,7 @@
                             <tr>
                                 <th>Article</th>
                                 <th>Prix</th>
+                                <th>Quantité</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -45,9 +45,18 @@
                 </div>
                 <div>
                     <h2>Facture en cours</h2>
-                    <div id="current-cart"></div>
-                    <div class="total">Total: <span id="cart-total">0.00</span> €</div>
-                    <button class="btn btn-complete" onclick="finaliserFacture()">Finaliser la facture</button>
+                    <div id="current-cart">
+                        <div class="cart-items"></div>
+                        <div class="cart-summary">
+                            <div class="total">Total: <span id="cart-total">0.00</span> €</div>
+                            <div class="actions">
+                                <button class="btn btn-complete" onclick="finaliserFacture()">
+                                    <i class="fas fa-check"></i>
+                                    Finaliser la facture
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -147,6 +156,30 @@
     <div class="modal-content">
         <span class="close">&times;</span>
         <div id="modalContent"></div>
+    </div>
+</div>
+
+<!-- Modal de confirmation de suppression -->
+<div id="deleteConfirmModal" class="modal">
+    <div class="modal-content modal-confirm">
+        <div class="modal-header">
+            <h2><i class="fas fa-exclamation-triangle"></i> Confirmation de suppression</h2>
+            <span class="close" onclick="closeDeleteModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p>Êtes-vous sûr de vouloir supprimer l'article "<span id="deleteArticleName"></span>" ?</p>
+            <p class="warning-text">Cette action est irréversible.</p>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeDeleteModal()">
+                <i class="fas fa-times"></i>
+                Annuler
+            </button>
+            <button class="btn btn-delete" id="confirmDeleteBtn">
+                <i class="fas fa-trash"></i>
+                Supprimer
+            </button>
+        </div>
     </div>
 </div>
 </body>
