@@ -1,3 +1,6 @@
+// Configuration de l'API
+const API_BASE_URL = ''; // Vide car on utilise des chemins relatifs
+
 // Initialisation des données dans le localStorage
 if (!localStorage.getItem('articles')) {
     localStorage.setItem('articles', JSON.stringify([]));
@@ -13,7 +16,7 @@ if (!localStorage.getItem('dernierNumeroFacture')) {
 let panierActuel = [];
 
 // Fonctions de gestion des articles
-function ajouterArticle() {
+async function ajouterArticle() {
     const nom = document.getElementById('article-name').value;
     const prix = parseFloat(document.getElementById('article-price').value);
     const categorie = document.getElementById('article-category').value;
@@ -23,77 +26,138 @@ function ajouterArticle() {
         return;
     }
 
-    const articles = JSON.parse(localStorage.getItem('articles'));
-    const nouvelArticle = {
-        id: Date.now(),
-        nom,
-        prix,
-        categorie
-    };
+    try {
+        const response = await fetch('/api/articles.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ nom, prix, categorie })
+        });
 
-    articles.push(nouvelArticle);
-    localStorage.setItem('articles', JSON.stringify(articles));
+        if (!response.ok) {
+            throw new Error('Erreur lors de l\'ajout de l\'article');
+        }
 
-    document.getElementById('article-name').value = '';
-    document.getElementById('article-price').value = '';
-    
-    showToast("Article ajouté avec succès", "success");
-    chargerArticles();
+        document.getElementById('article-name').value = '';
+        document.getElementById('article-price').value = '';
+        
+        showToast("Article ajouté avec succès", "success");
+        chargerArticles();
+    } catch (error) {
+        console.error('Erreur:', error);
+        showToast("Erreur lors de l'ajout de l'article", "error");
+    }
 }
 
-function supprimerArticle(id) {
-    const articles = JSON.parse(localStorage.getItem('articles'));
-    const index = articles.findIndex(a => a.id === id);
-    articles.splice(index, 1);
-    localStorage.setItem('articles', JSON.stringify(articles));
-    chargerArticles();
-    showToast("Article supprimé avec succès", "success");
+async function supprimerArticle(id) {
+    try {
+        const response = await fetch(`/api/articles.php?id=${id}`, {
+            method: 'DELETE'
+        });
+
+        if (!response.ok) {
+            throw new Error('Erreur lors de la suppression');
+        }
+
+        chargerArticles();
+        showToast("Article supprimé avec succès", "success");
+    } catch (error) {
+        console.error('Erreur:', error);
+        showToast("Erreur lors de la suppression", "error");
+    }
 }
 
-function chargerArticles() {
-    const articles = JSON.parse(localStorage.getItem('articles'));
-    const tableBody = document.querySelector('#articles-list tbody');
-    const articlesTable = document.querySelector('#articles-table tbody');
+async function chargerArticles() {
+    try {
+        const response = await fetch('/api/articles.php');
+        const articles = await response.json();
 
-    // Mise à jour de la liste des articles dans l'onglet gestion
-    tableBody.innerHTML = articles.map(article => `
-        <tr>
-            <td>${article.nom}</td>
-            <td>${article.prix.toFixed(2)} €</td>
-            <td>${article.categorie}</td>
-            <td>
-                <button class="btn-icon" onclick="ouvrirModalEdition(${article.id})">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button class="btn-icon" onclick="supprimerArticle(${article.id})">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </td>
-        </tr>
-    `).join('');
+        // Stocker les articles dans une variable globale pour y accéder plus tard
+        window.articlesDisponibles = articles;
 
-    // Mise à jour de la liste des articles disponibles
-    articlesTable.innerHTML = articles.map(article => `
-        <tr>
-            <td>${article.nom}</td>
-            <td>${article.prix.toFixed(2)} €</td>
-            <td>
-                <button class="btn-icon" onclick="ajouterAuPanier(${article.id})">
-                    <i class="fas fa-plus"></i>
-                </button>
-            </td>
-        </tr>
-    `).join('');
+        const tableBody = document.querySelector('#articles-list tbody');
+        const articlesTable = document.querySelector('#articles-table tbody');
+
+        // Mise à jour de la liste des articles dans l'onglet gestion
+        tableBody.innerHTML = articles.map(article => `
+            <tr>
+                <td>${article.nom}</td>
+                <td>${parseFloat(article.prix).toFixed(2)} €</td>
+                <td>${article.categorie}</td>
+                <td class="article-actions">
+                    <button class="btn btn-edit" onclick="ouvrirModalEdition(${article.id})" title="Modifier">
+                        <i class="fas fa-edit"></i>
+                        <span>Modifier</span>
+                    </button>
+                    <button class="btn btn-delete" onclick="confirmerSuppression(${article.id})" title="Supprimer">
+                        <i class="fas fa-trash"></i>
+                        <span>Supprimer</span>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+
+        // Mise à jour de la liste des articles disponibles
+        articlesTable.innerHTML = articles.map(article => `
+            <tr data-article-id="${article.id}">
+                <td>${article.nom}</td>
+                <td>${parseFloat(article.prix).toFixed(2)} €</td>
+                <td>
+                    <div class="quantity-controls">
+                        <button class="quantity-btn" onclick="setQuantiteTemp(${article.id}, Math.max(1, (document.querySelector('tr[data-article-id=\\'${article.id}\\'] .quantity-input').value - 1)))">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <input type="number" class="quantity-input" value="1" 
+                               min="1" onchange="setQuantiteTemp(${article.id}, this.value)">
+                        <button class="quantity-btn" onclick="setQuantiteTemp(${article.id}, parseInt(document.querySelector('tr[data-article-id=\\'${article.id}\\'] .quantity-input').value) + 1)">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </td>
+                <td>
+                    <button class="btn btn-add" onclick="ajouterAuPanierAvecQuantite(${article.id})">
+                        <i class="fas fa-plus"></i>
+                        Ajouter
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Erreur:', error);
+        showToast("Erreur lors du chargement des articles", "error");
+    }
 }
 
 // Gestion du panier
-function ajouterAuPanier(articleId) {
-    const articles = JSON.parse(localStorage.getItem('articles'));
-    const article = articles.find(a => a.id === articleId);
-    
-    panierActuel.push({...article, quantite: 1});
-    mettreAJourPanier();
-    showToast("Article ajouté au panier", "success");
+async function ajouterAuPanier(id) {
+    try {
+        const response = await fetch(`/api/articles.php?id=${id}`);
+        const article = await response.json();
+        
+        if (!article || !article.id) {
+            throw new Error('Article non trouvé');
+        }
+        
+        const articleExistant = panierActuel.find(item => item.id === article.id);
+        
+        if (articleExistant) {
+            articleExistant.quantite++;
+        } else {
+            panierActuel.push({
+                id: article.id,
+                nom: article.nom,
+                prix: article.prix,
+                quantite: 1
+            });
+        }
+        
+        mettreAJourPanier();
+        showToast("Article ajouté au panier", "success");
+    } catch (error) {
+        console.error('Erreur:', error);
+        showToast("Erreur lors de l'ajout au panier", "error");
+    }
 }
 
 function retirerDuPanier(index) {
@@ -102,24 +166,74 @@ function retirerDuPanier(index) {
 }
 
 function mettreAJourPanier() {
-    const cartDiv = document.getElementById('current-cart');
+    const cartContainer = document.getElementById('current-cart');
+    const cartItems = cartContainer.querySelector('.cart-items');
     const total = panierActuel.reduce((sum, item) => sum + (item.prix * item.quantite), 0);
     
-    cartDiv.innerHTML = panierActuel.map((item, index) => `
-        <div class="cart-item">
-            <span>${item.nom} (${item.quantite}x)</span>
-            <span>${(item.prix * item.quantite).toFixed(2)} €</span>
-            <button class="btn-icon" onclick="retirerDuPanier(${index})">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-    `).join('');
+    if (panierActuel.length === 0) {
+        cartItems.innerHTML = '<div class="cart-empty">Panier vide</div>';
+    } else {
+        cartItems.innerHTML = panierActuel.map(item => `
+            <div class="cart-item" data-id="${item.id}">
+                <div class="cart-item-details">
+                    <span class="cart-item-name">${item.nom}</span>
+                    <div class="cart-item-price">
+                        <span class="price-unit">${item.prix.toFixed(2)} € / unité</span>
+                        <span class="price-total">${(item.prix * item.quantite).toFixed(2)} €</span>
+                    </div>
+                </div>
+                <div class="quantity-controls">
+                    <button class="quantity-btn" onclick="modifierQuantite(${item.id}, -1)">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <input type="number" class="quantity-input" value="${item.quantite}" 
+                           onchange="mettreAJourQuantite(${item.id}, this.value)" min="1">
+                    <button class="quantity-btn" onclick="modifierQuantite(${item.id}, 1)">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                <button class="btn btn-remove" onclick="supprimerDuPanier(${item.id})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `).join('');
+    }
+    
+    document.getElementById('cart-total').textContent = total.toFixed(2);
+}
 
-        document.getElementById('cart-total').textContent = total.toFixed(2);
+function modifierQuantite(articleId, delta) {
+    const article = panierActuel.find(item => item.id === articleId);
+    if (article) {
+        article.quantite = Math.max(1, article.quantite + delta);
+        mettreAJourPanier();
+    }
+}
+
+function mettreAJourQuantite(articleId, nouvelleQuantite) {
+    const article = panierActuel.find(item => item.id === articleId);
+    if (article) {
+        article.quantite = Math.max(1, parseInt(nouvelleQuantite) || 1);
+        mettreAJourPanier();
+    }
+}
+
+function supprimerDuPanier(articleId) {
+    const index = panierActuel.findIndex(item => item.id === articleId);
+    if (index !== -1) {
+        const itemElement = document.querySelector(`.cart-item[data-id="${articleId}"]`);
+        itemElement.classList.add('removing');
+        
+        setTimeout(() => {
+            panierActuel.splice(index, 1);
+            mettreAJourPanier();
+            showToast("Article supprimé du panier", "info");
+        }, 300);
+    }
 }
 
 // Gestion des factures
-function finaliserFacture() {
+async function finaliserFacture() {
     const tableNumber = document.getElementById('table-number').value;
     if (!tableNumber) {
         showToast("Veuillez entrer un numéro de table", "error");
@@ -130,108 +244,234 @@ function finaliserFacture() {
         return;
     }
 
-    const factures = JSON.parse(localStorage.getItem('factures'));
-    const numeroFacture = parseInt(localStorage.getItem('dernierNumeroFacture')) + 1;
-    
-    const nouvelleFacture = {
-        id: numeroFacture,
-        table: tableNumber,
-        date: new Date().toISOString(),
-        articles: panierActuel,
-        total: panierActuel.reduce((sum, item) => sum + (item.prix * item.quantite), 0)
-    };
+    try {
+        // Calculer le total
+        const total = panierActuel.reduce((sum, item) => sum + (parseFloat(item.prix) * item.quantite), 0);
+        
+        // Préparer les données de la facture
+        const factureData = {
+            numero_table: parseInt(tableNumber),
+            articles: panierActuel.map(article => ({
+                id: parseInt(article.id),
+                quantite: parseInt(article.quantite),
+                prix_unitaire: parseFloat(article.prix)
+            })),
+            total: parseFloat(total.toFixed(2))
+        };
 
-    factures.push(nouvelleFacture);
-    localStorage.setItem('factures', JSON.stringify(factures));
-    localStorage.setItem('dernierNumeroFacture', numeroFacture.toString());
+        console.log("Données de la facture à envoyer:", factureData);
 
-    // Réinitialisation du panier
-    panierActuel = [];
-    mettreAJourPanier();
+        const response = await fetch('/api/factures.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(factureData)
+        });
+
+        const responseData = await response.json();
+        console.log("Réponse du serveur:", responseData);
+
+        if (!response.ok) {
+            throw new Error(responseData.error || 'Erreur lors de la création de la facture');
+        }
+
+        // Réinitialisation du panier
+        panierActuel = [];
+        mettreAJourPanier();
         document.getElementById('table-number').value = '';
-    
-    showToast("Facture finalisée avec succès", "success");
-    chargerHistorique();
+        
+        showToast("Facture finalisée avec succès", "success");
+        chargerHistorique();
+    } catch (error) {
+        console.error('Erreur détaillée:', error);
+        showToast(error.message || "Erreur lors de la finalisation de la facture", "error");
+    }
 }
 
-function chargerHistorique() {
-    const factures = JSON.parse(localStorage.getItem('factures'));
-    const tableBody = document.querySelector('#historique-table tbody');
-    
-    tableBody.innerHTML = factures.map(facture => `
-        <tr>
-            <td>${facture.id}</td>
-            <td>${facture.table}</td>
-            <td>${moment(facture.date).format('DD/MM/YYYY HH:mm')}</td>
-            <td>${facture.total.toFixed(2)} €</td>
-            <td>
-                <button class="btn-icon" onclick="afficherDetailFacture(${facture.id})">
-                    <i class="fas fa-eye"></i>
-                </button>
+async function chargerHistorique() {
+    try {
+        const response = await fetch('/api/factures.php');
+        const factures = await response.json();
+        
+        const tableBody = document.querySelector('#historique-table tbody');
+        tableBody.innerHTML = factures.map(facture => `
+            <tr>
+                <td>#${facture.id}</td>
+                <td>Table ${facture.numero_table}</td>
+                <td>${moment(facture.date_creation).format('DD/MM/YYYY HH:mm')}</td>
+                <td class="montant">${parseFloat(facture.total).toFixed(2)} €</td>
+                <td class="actions-cell">
+                    <button class="btn btn-view" onclick="afficherDetailFacture(${facture.id})" title="Voir les détails">
+                        <i class="fas fa-receipt"></i>
+                        <span>Détails</span>
+                    </button>
                 </td>
-                        </tr>
-    `).join('');
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Erreur:', error);
+        showToast("Erreur lors du chargement de l'historique", "error");
+    }
 }
 
-function afficherDetailFacture(factureId) {
-    const factures = JSON.parse(localStorage.getItem('factures'));
-    const facture = factures.find(f => f.id === factureId);
-    
-    const modal = document.getElementById('factureModal');
-    const modalContent = document.getElementById('modalContent');
-    
-    modalContent.innerHTML = `
-        <h2>Facture N°${facture.id}</h2>
-        <p>Table: ${facture.table}</p>
-        <p>Date: ${moment(facture.date).format('DD/MM/YYYY HH:mm')}</p>
-        <div class="facture-details">
-            ${facture.articles.map(article => `
-                <div class="facture-item">
-                    <span>${article.nom} (${article.quantite}x)</span>
-                    <span>${(article.prix * article.quantite).toFixed(2)} €</span>
+async function afficherDetailFacture(id) {
+    try {
+        const response = await fetch(`/api/factures.php?id=${id}`);
+        const facture = await response.json();
+        
+        if (!facture || !facture.articles) {
+            throw new Error('Données de facture invalides');
+        }
+        
+        const modal = document.getElementById('factureModal');
+        const modalContent = document.getElementById('modalContent');
+        
+        modalContent.innerHTML = `
+            <div class="facture-header">
+                <h2><i class="fas fa-receipt"></i> Facture N°${facture.id}</h2>
+                <div class="facture-info">
+                    <p><i class="fas fa-table"></i> Table ${facture.numero_table}</p>
+                    <p><i class="far fa-clock"></i> ${moment(facture.date_creation).format('DD/MM/YYYY HH:mm')}</p>
                 </div>
-            `).join('')}
-        </div>
-        <div class="facture-total">
-            <strong>Total: ${facture.total.toFixed(2)} €</strong>
-        </div>
-    `;
+            </div>
+            <div class="facture-content">
+                <table class="facture-articles">
+                    <thead>
+                        <tr>
+                            <th>Article</th>
+                            <th>Quantité</th>
+                            <th>Prix unitaire</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${facture.articles.map(article => `
+                            <tr>
+                                <td>${article.nom}</td>
+                                <td class="text-center">${article.quantite}</td>
+                                <td class="text-right">${parseFloat(article.prix_unitaire).toFixed(2)} €</td>
+                                <td class="text-right">${(article.prix_unitaire * article.quantite).toFixed(2)} €</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                <div class="facture-total">
+                    <div class="total-line">
+                        <span>Total</span>
+                        <span class="montant">${parseFloat(facture.total).toFixed(2)} €</span>
+                    </div>
+                </div>
+            </div>
+            <div class="facture-actions">
+                <button class="btn btn-secondary" onclick="document.getElementById('factureModal').style.display='none'">
+                    <i class="fas fa-times"></i>
+                    Fermer
+                </button>
+                <button class="btn btn-primary" onclick="imprimerFacture(${facture.id})">
+                    <i class="fas fa-print"></i>
+                    Imprimer
+                </button>
+            </div>
+        `;
+        
+        modal.style.display = "block";
+    } catch (error) {
+        console.error('Erreur:', error);
+        showToast("Erreur lors du chargement des détails de la facture", "error");
+    }
+}
+
+// Ajout de la fonction d'impression
+function imprimerFacture(id) {
+    const contenuFacture = document.getElementById('modalContent').innerHTML;
+    const fenetreImpression = window.open('', '', 'height=600,width=800');
     
-    modal.style.display = "block";
+    fenetreImpression.document.write(`
+        <html>
+            <head>
+                <title>Facture N°${id}</title>
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+                <style>
+                    body { font-family: Arial, sans-serif; padding: 20px; }
+                    .facture-header { margin-bottom: 30px; }
+                    .facture-articles { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                    .facture-articles th, .facture-articles td { padding: 10px; border-bottom: 1px solid #ddd; }
+                    .text-right { text-align: right; }
+                    .text-center { text-align: center; }
+                    .facture-total { margin-top: 30px; text-align: right; font-weight: bold; }
+                    .montant { font-size: 1.2em; color: #2d3748; }
+                    @media print {
+                        .facture-actions { display: none; }
+                    }
+                </style>
+            </head>
+            <body>
+                ${contenuFacture}
+            </body>
+        </html>
+    `);
+    
+    fenetreImpression.document.close();
+    fenetreImpression.focus();
+    setTimeout(() => {
+        fenetreImpression.print();
+        fenetreImpression.close();
+    }, 250);
 }
 
 // Gestion des modales
-function ouvrirModalEdition(articleId) {
-    const articles = JSON.parse(localStorage.getItem('articles'));
-    const article = articles.find(a => a.id === articleId);
-    
-    document.getElementById('edit-article-id').value = article.id;
-    document.getElementById('edit-article-name').value = article.nom;
-    document.getElementById('edit-article-price').value = article.prix;
-    document.getElementById('edit-article-category').value = article.categorie;
-    
-    document.getElementById('editArticleModal').style.display = "block";
+async function ouvrirModalEdition(id) {
+    try {
+        const response = await fetch(`/api/articles.php?id=${id}`);
+        const article = await response.json();
+        
+        if (!article || !article.id) {
+            throw new Error('Article non trouvé');
+        }
+        
+        document.getElementById('edit-article-id').value = article.id;
+        document.getElementById('edit-article-name').value = article.nom;
+        document.getElementById('edit-article-price').value = article.prix;
+        document.getElementById('edit-article-category').value = article.categorie;
+        
+        document.getElementById('editArticleModal').style.display = "block";
+    } catch (error) {
+        console.error('Erreur:', error);
+        showToast("Erreur lors du chargement de l'article", "error");
+    }
 }
 
 function closeEditModal() {
     document.getElementById('editArticleModal').style.display = "none";
 }
 
-function sauvegarderArticle() {
+async function sauvegarderArticle() {
     const id = parseInt(document.getElementById('edit-article-id').value);
     const nom = document.getElementById('edit-article-name').value;
     const prix = parseFloat(document.getElementById('edit-article-price').value);
     const categorie = document.getElementById('edit-article-category').value;
 
-    const articles = JSON.parse(localStorage.getItem('articles'));
-    const index = articles.findIndex(a => a.id === id);
-    
-    articles[index] = { id, nom, prix, categorie };
-    localStorage.setItem('articles', JSON.stringify(articles));
-    
+    try {
+        const response = await fetch(`/api/articles.php?id=${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ nom, prix, categorie })
+        });
+
+        if (!response.ok) {
+            throw new Error('Erreur lors de la modification');
+        }
+
         closeEditModal();
-    chargerArticles();
-    showToast("Article modifié avec succès", "success");
+        chargerArticles();
+        showToast("Article modifié avec succès", "success");
+    } catch (error) {
+        console.error('Erreur:', error);
+        showToast("Erreur lors de la modification de l'article", "error");
+    }
 }
 
 // Gestion des onglets
@@ -267,9 +507,16 @@ document.addEventListener('DOMContentLoaded', () => {
     window.onclick = function(event) {
         const factureModal = document.getElementById('factureModal');
         const editModal = document.getElementById('editArticleModal');
-        if (event.target === factureModal || event.target === editModal) {
+        const deleteModal = document.getElementById('deleteConfirmModal');
+        
+        if (event.target === factureModal) {
             factureModal.style.display = "none";
+        }
+        if (event.target === editModal) {
             editModal.style.display = "none";
+        }
+        if (event.target === deleteModal) {
+            deleteModal.style.display = "none";
         }
     }
     
@@ -279,5 +526,74 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+function setQuantiteTemp(articleId, quantite) {
+    const input = document.querySelector(`tr[data-article-id='${articleId}'] .quantity-input`);
+    if (input) {
+        input.value = Math.max(1, parseInt(quantite) || 1);
+    }
+}
+
+async function ajouterAuPanierAvecQuantite(id) {
+    try {
+        const article = window.articlesDisponibles.find(a => a.id === id);
+        if (!article) {
+            throw new Error('Article non trouvé');
+        }
+
+        const quantiteInput = document.querySelector(`tr[data-article-id='${id}'] .quantity-input`);
+        const quantite = parseInt(quantiteInput?.value || 1);
+        
+        const articleExistant = panierActuel.find(item => item.id === article.id);
+        
+        if (articleExistant) {
+            articleExistant.quantite += quantite;
+        } else {
+            panierActuel.push({
+                id: article.id,
+                nom: article.nom,
+                prix: parseFloat(article.prix),
+                quantite: quantite
+            });
+        }
+        
+        mettreAJourPanier();
+        showToast("Article ajouté au panier", "success");
+        
+        // Réinitialiser la quantité à 1
+        setQuantiteTemp(id, 1);
+    } catch (error) {
+        console.error('Erreur:', error);
+        showToast("Erreur lors de l'ajout au panier", "error");
+    }
+}
+
+// Ajouter cette nouvelle fonction pour la confirmation de suppression
+function confirmerSuppression(id) {
+    const article = window.articlesDisponibles.find(a => a.id === id);
+    if (!article) return;
+
+    const modal = document.getElementById('deleteConfirmModal');
+    const nomSpan = document.getElementById('deleteArticleName');
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+
+    nomSpan.textContent = article.nom;
+    modal.style.display = "block";
+
+    // Retirer l'ancien event listener s'il existe
+    confirmBtn.replaceWith(confirmBtn.cloneNode(true));
+    const newConfirmBtn = document.getElementById('confirmDeleteBtn');
+    
+    // Ajouter le nouvel event listener
+    newConfirmBtn.addEventListener('click', async () => {
+        await supprimerArticle(id);
+        closeDeleteModal();
+    });
+}
+
+function closeDeleteModal() {
+    const modal = document.getElementById('deleteConfirmModal');
+    modal.style.display = "none";
+}
 
 
